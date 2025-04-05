@@ -1,50 +1,78 @@
-<?php session_start();
+<?php session_start(); 
 
-$db = new PDO(
-    'mysql:host=localhost;dbname=module;charset=utf8',
-    'root',
-     null,
-     [PDO::ATTR_DEFAUIL_FETCH_MODE => PDO::FETCH_ASSOC]
+// 1. проверка наличия токена : локально ($_SESSION['token']) и сравнение с бд
+// 2. есди есть --> перекидываем на страницу пользователя/админ
+// 3. если нету --> остаёмся на этой странице
+
+// подключение к бд
+$db = new PDO('mysql:host=localhost;dbname=demka', 'root', null,
+    [PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC]
 );
 
-/**
- * 1. Проверка наличия токена : ($_SESSION['token']) локально и сравнение с бд
- *     Если есть -> перекидываем на страницу пользователя /  админа
- *     Если нету -> Останемся на этой
- */
+$_SESSION['token'] = '123';
 
-// Проверка : существует ли токен и что он не путсой
-if (isset($_SESSION['token']) && !($_SESSION['token'])) {
+if(isset($_SESSION['token']) && !empty($_SESSION['token'])){
     $token = $_SESSION['token'];
-    // Запрос на получение пользователя по токену
-    $user = $db->query("SELECT id , type FROM users WHERE token = '$token'")->fetchAll();
+    // запрос на получение пользователя по токену
+    $user = $db->query("SELECT id, type FROM users WHERE token = '$token'")->fetchAll();
 
-    // Если пользователь есть
-    if (!empty($user)) {
+    // если пользователь есть
+    if(!empty($user)){
         $userType = $user[0]['type'];
-        $isAdmin = $userType === 'admin';
-        $isUser = $userType ==='user';
+        $isAdmin = $userType == 'admin';
+        $isUser = $userType == 'user';
 
-        //Редирект на страницы в зависимости от типа пользователя
-        $isAdmin && header('Location:admin.php');
-        $isUser && header('Location:user.php');
+        // перенаправление на страницу пользователя/админ
+        $isAdmin && header('Location: admin.php');
+        $isUser && header('Location: user.php');
     }
 
+    if($_SERVER['REQUEST_METHOD'] == 'POST'){
+        // 1. Получаем данные из $_POST
+        $login = $_POST['login'] ?? '';
+        $password = $_POST['password'] ?? '';
+        
+        // 2. Проверяем заполнены ли поля
+        $errors = [];
+        if(empty($login)) {
+            $errors['login'] = 'Необходимо заполнить';
+        }
+        if(empty($password)) {
+            $errors['password'] = 'Необходимо заполнить';
+        }
+        
+        // Если ошибок нет, проверяем данные в БД
+        if(empty($errors)) {
+            // 3. Сравниваем значения с БД
+            $stmt = $db->prepare("SELECT id, type, password FROM users WHERE login = ?");
+            $stmt->execute([$login]);
+            $user = $stmt->fetch();
+            
+            if($user && $password === $user['password']) { // В реальном проекте используйте password_verify()
+                // Генерируем новый токен
+                $token = bin2hex(random_bytes(32));
+                
+                // Сохраняем токен в БД
+                $stmt = $db->prepare("UPDATE users SET token = ? WHERE id = ?");
+                $stmt->execute([$token, $user['id']]);
+                
+                // Сохраняем токен в сессии
+                $_SESSION['token'] = $token;
+                
+                // Редиректим на нужную страницу
+                if($user['type'] === 'admin') {
+                    header('Location: admin.php');
+                } else {
+                    header('Location: user.php');
+                }
+                exit();
+            } else {
+                $errors['auth'] = 'Неверный логин/пароль';
+            }
+        }
+    }
 }
 
-/* Проверка логина и пароля с БД , запись токена в БД , редирект */
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST'){
-   // 0. Добавить в БД поля login и password
-   // 1. Получить отправленные данные (логин и пароль) с $_ POST
-   // 2. Проверить переданы ли они
-   // Если да -> ничо не делаем
-// Если нет -> Ошибка : поля необходимо заполнить
-   
-   // 3. Сравнить значения с БД
-   // Если совпали -› генерим токен , записываем в сессию и бд, редиректим
-// Если нет -› Ошибка : неверный логин или пароль
-}
 
 ?>
 
@@ -54,26 +82,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST'){
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
     <title>Авторизация</title>
-    <link rel= "stylesheet" href="style.css">
-
 </head>
-<body>
-    <div class= "login">
-        <form>
-            <h1>Авторизация</h1>
+    <div class="login">
+        <form action="login.php" method="post">
+            <h1 class="login-title">Авторизация</h1>
             <label for="login">
                 Введите логин
-                <span class="error">Необходимо заполнить</span>
+                <?php if(isset($errors['login'])): ?>
+                    <span class="error"><?php echo $errors['login']; ?></span>
+                <?php endif; ?>
             </label>
-            <input type="text" name="login" id="login">
+            <input type="text" name="login" id="login" value="<?php echo htmlspecialchars($login ?? ''); ?>">
             <label for="password">
                 Введите пароль
-                <span class="error">Необходимо заполнить</span>
+                <?php if(isset($errors['password'])): ?>
+                    <span class="error"><?php echo $errors['password']; ?></span>
+                <?php endif; ?>
             </label>
-            <input type="text" name="password" id="password">
-            <button type="submit">Выход</button>
-            <p> </p>
+            <input type="password" name="password" id="password">
+            <button type="submit">Вход</button>
+            <?php if(isset($errors['auth'])): ?>
+                <p class="error"><?php echo $errors['auth']; ?></p>
+            <?php endif; ?>
         </form>
     </div>
 </body>
