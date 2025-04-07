@@ -9,6 +9,7 @@
     <div class="wrapper">
         <div class="title">
             Панель администратора
+            <button class="logout-btn">Выход из аккаунта</button>
         </div>
         <div class="admin-panel">
             <div class="users-list">
@@ -140,6 +141,14 @@
                 row.parentNode.removeChild(row);
             });
         });
+
+        // JavaScript для выхода из аккаунта
+        document.querySelector('.logout-btn').addEventListener('click', function() {
+            // Код для выхода из аккаунта
+            // Например, перенаправление на страницу входа
+            window.location.href = 'login.php';
+        });
     </script>
+
 </body>
 </html>
