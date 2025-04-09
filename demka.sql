@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Хост: 127.0.0.1
--- Время создания: Апр 07 2025 г., 06:41
+-- Время создания: Апр 09 2025 г., 04:46
 -- Версия сервера: 10.4.32-MariaDB
 -- Версия PHP: 8.2.12
 
@@ -43,7 +43,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `name`, `surname`, `type`, `blocked`, `token`, `login`, `password`) VALUES
-(1, 'danil', 'slesarenko', 'admin', NULL, 'eb5f6d4595c805b0ca11c9065cefb6efbf9770696c5dd86febc11ebf5ab54171', 'admin', '123'),
+(1, 'danil', 'slesarenko', 'admin', NULL, 'f184f5d0ebefb1ee18b37db8d055131b481145c25362e9370e30cf849de1a230', 'admin', '123'),
 (2, 'таня', 'карпенко', 'user', '0', NULL, 'user', '123');
 
 --

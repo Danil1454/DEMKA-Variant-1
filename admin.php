@@ -57,21 +57,28 @@
                     </div>
                 </form>
             </div>
+            <!-- Форма редактирования -->
             <div class="edit-user" style="display: none;">
                 <h2>Редактировать пользователя</h2>
-                <form action="#" method="POST">
+                <form id="editUserForm">
+                    <!-- ID пользователя (скрытое поле) -->
+                    <input type="hidden" name="userId">
+                    <!-- Имя пользователя -->
                     <div class="field">
                         <input type="text" name="username" required>
                         <label>Имя пользователя</label>
                     </div>
+                    <!-- Электронная почта -->
                     <div class="field">
                         <input type="email" name="email" required>
                         <label>Электронная почта</label>
                     </div>
+                    <!-- Пароль -->
                     <div class="field">
                         <input type="password" name="password" required>
                         <label>Пароль</label>
                     </div>
+                    <!-- Кнопка сохранения -->
                     <div class="field">
                         <input type="submit" value="Сохранить">
                     </div>
@@ -80,75 +87,87 @@
         </div>
     </div>
 
+    <!-- JavaScript -->
     <script>
-        // JavaScript для добавления пользователей в таблицу
+
+        // Добавление нового пользователя
         document.getElementById('addUserForm').addEventListener('submit', function(event) {
-            event.preventDefault(); // Отменяем стандартное поведение формы
+            event.preventDefault();
 
-            // Получаем значения из формы
-            var username = document.querySelector('input[name="username"]').value;
-            var email = document.querySelector('input[name="email"]').value;
-            var password = document.querySelector('input[name="password"]').value;
+            var username = document.querySelector('#addUserForm input[name="username"]').value;
+            var email = document.querySelector('#addUserForm input[name="email"]').value;
+            var password = document.querySelector('#addUserForm input[name="password"]').value;
 
-            // Генерируем новый ID (в реальности это должно браться из базы данных)
             var newId = Math.floor(Math.random() * 1000);
 
-            // Создаем новую строку таблицы
             var newRow = document.createElement('tr');
             newRow.innerHTML = `
                 <td>${newId}</td>
                 <td>${username}</td>
                 <td>${email}</td>
-                <td>
-                    <button class="edit-btn">Редактировать</button>
-                    <button class="delete-btn">Удалить</button>
-                </td>
-            `;
-
-            // Добавляем новую строку в таблицу
+                <td><button class='edit-btn'>Редактировать</button><button class='delete-btn'>Удалить</button></td>`;
+            
             document.getElementById('usersTbody').appendChild(newRow);
-
-            // Очищаем форму
             document.getElementById('addUserForm').reset();
+            addEventListenersToButtons();
+        });
 
-            // Добавляем обработчики для новых кнопок редактирования и удаления
+        // Функция для добавления обработчиков событий на кнопки
+        function addEventListenersToButtons() {
+            // Обработчик для кнопок "Редактировать"
             document.querySelectorAll('.edit-btn').forEach(button => {
                 button.addEventListener('click', function() {
+                    var row = button.parentNode.parentNode;       
+                    var userId = row.children[0].textContent;
+                    var username = row.children[1].textContent;
+                    var email = row.children[2].textContent;
+                    // Заполняем форму редактирования данными
+                    document.querySelector('.edit-user input[name="userId"]').value = userId;
+                    document.querySelector('.edit-user input[name="username"]').value = username;
+                    document.querySelector('.edit-user input[name="email"]').value = email;
+                    // Показываем форму редактирования
                     document.querySelector('.edit-user').style.display = 'block';
                 });
             });
-
+            // Обработчик для кнопок "Удалить"
             document.querySelectorAll('.delete-btn').forEach(button => {
                 button.addEventListener('click', function() {
-                    // Код для удаления строки таблицы
                     var row = button.parentNode.parentNode;
                     row.parentNode.removeChild(row);
                 });
             });
-        });
-
-        // JavaScript для показа/скрытия формы редактирования
-        document.querySelectorAll('.edit-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelector('.edit-user').style.display = 'block';
+        }
+        // Сохранение изменений после редактирования
+        document.getElementById('editUserForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            var userId = document.querySelector('#editUserForm input[name="userId"]').value;
+            var username = document.querySelector('#editUserForm input[name="username"]').value;
+            var email = document.querySelector('#editUserForm input[name="email"]').value;
+            // Удаляем старую строку с этим ID
+            var rows = document.querySelectorAll('#usersTable tbody tr');
+            rows.forEach(row => {
+                if (row.children[0].textContent === userId) {
+                    row.parentNode.removeChild(row);
+                }
             });
+            // Добавляем обновленную строку в таблицу
+            var updatedRow = document.createElement('tr');
+            updatedRow.innerHTML = `
+                <td>${userId}</td>
+                <td>${username}</td>
+                <td>${email}</td>
+                <td><button class='edit-btn'>Редактировать</button><button class='delete-btn'>Удалить</button></td>`; 
+            document.getElementById('usersTbody').appendChild(updatedRow);
+            // Скрываем форму редактирования и очищаем её
+            document.querySelector('.edit-user').style.display = 'none';
+            addEventListenersToButtons();
         });
-
-        // JavaScript для удаления строк таблицы
-        document.querySelectorAll('.delete-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                var row = button.parentNode.parentNode;
-                row.parentNode.removeChild(row);
-            });
-        });
-
-        // JavaScript для выхода из аккаунта
+        // Обработчик для выхода из аккаунта
         document.querySelector('.logout-btn').addEventListener('click', function() {
-            // Код для выхода из аккаунта
-            // Например, перенаправление на страницу входа
             window.location.href = 'login.php';
         });
+        // Инициализация обработчиков событий при загрузке страницы
+        addEventListenersToButtons();
     </script>
-
 </body>
 </html>
